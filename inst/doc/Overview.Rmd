@@ -1,0 +1,303 @@
+---
+title: "Overview"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Overview}
+  %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+The [`sjPlot`](https://CRAN.R-project.org/package=sjPlot) R package is a great package for visualizing results.
+
+However, the tables created using the functions [`sjPlot::tab_model`](https://www.rdocumentation.org/packages/sjPlot/versions/2.8.4/topics/tab_model) or [`sjPlot::tab_xtab`](https://www.rdocumentation.org/packages/sjPlot/versions/2.8.4/topics/tab_xtab) return HTML tables and are not straightforward to use in R, especially when trying to integrate them into pdf- or word-documents using Rmarkdown.
+
+Various approaches/ tutorials exist to convert `sjPlot` HTML tables to R `data.frame` objects: 
+
+* https://stackoverflow.com/questions/63053465/how-to-convert-an-html-sjtable-from-the-sjplot-package-to-latex
+* https://stackoverflow.com/questions/47744396/how-to-format-an-sjplot-in-pdf-rmarkdown
+* https://stackoverflow.com/questions/62197268/knitting-output-from-sjplottab-model-or-other-html-tables-into-pdf-document
+* https://stackoverflow.com/questions/65274404/how-to-extract-lme4-output-to-latex-tables
+
+None of these approaches converts `sjPlot` HTML tables to R `data.frame` objects or integrates well with `knitr::kable` or the [`kableExtra`](https://CRAN.R-project.org/package=kableExtra) R package. 
+
+The `sjtable2df` R package's goal is to overcome this and to provide an easy interface for converting `sjPlot`'s HTML tables to `data.frame`, `data.table`, or `kable` objects for further usage in R or Rmarkdown.
+
+Currently, `sjtable2df` provides two functions to convert tables created from `sjPlot`'s functions [`tab_model`](https://www.rdocumentation.org/packages/sjPlot/versions/2.8.4/topics/tab_model) and [`tab_xtab`](https://www.rdocumentation.org/packages/sjPlot/versions/2.8.4/topics/tab_xtab): `sjtable2df::mtab2df` and `sjtable2df::xtab2df`.
+
+# Example: Contingency-Tables
+
+## Data Preprocessing
+
+```{r setup}
+library(sjtable2df)
+
+library(mlbench)
+library(magrittr)
+
+# load data
+data("PimaIndiansDiabetes2")
+dataset <- PimaIndiansDiabetes2 %>%
+  data.table::as.data.table()
+
+# create new binary variable
+dataset[, ("preg_gt_4") := ifelse(get("pregnant") > 4, 1, 0) %>% factor()]
+```
+
+## Create Contingency Table
+
+```{r}
+xtab <- sjPlot::tab_xtab(
+  var.row = dataset$diabetes,
+  var.col = dataset$preg_gt_4,
+  show.summary = TRUE,
+  use.viewer = FALSE
+)
+```
+
+```{r results='asis'}
+xtab
+```
+
+## Convert Contingency Table to `data.frame`
+
+```{r}
+xtab_df <- sjtable2df::xtab2df(xtab = xtab, output = "data.frame")
+class(xtab_df)
+xtab_df
+```
+
+## Convert Contingency Table to `kable`
+
+```{r}
+xtab_kbl <- sjtable2df::xtab2df(
+  xtab = xtab,
+  output = "kable",
+  caption = "Diabetes vs. preg>4",
+  col.names = c("Diabetes", "No", "Yes", "Total")
+)
+class(xtab_kbl)
+xtab_kbl %>%
+  kableExtra::add_header_above(
+    header = c(" " = 1, "Pregnant > 4" = 2, " " = 1)
+  )
+```
+
+## Percentages in cells
+
+This function also extracts further statistics from cells and writes them to parentheses:
+
+```{r}
+xtab <- sjPlot::tab_xtab(
+  var.row = dataset$diabetes,
+  var.col = dataset$preg_gt_4,
+  show.summary = TRUE,
+  show.col.prc = TRUE,
+  use.viewer = FALSE
+)
+```
+
+```{r results='asis'}
+xtab
+```
+
+## Convert Contingency Table to `data.frame`
+
+```{r}
+xtab_df <- sjtable2df::xtab2df(xtab = xtab, output = "data.frame")
+xtab_df
+```
+
+# Example: Model Tables: Linear Regression
+
+## Create Three Models
+
+```{r}
+m0 <- lm(
+  pressure ~ 1,
+  data = dataset
+)
+m1 <- lm(
+  pressure ~ glucose,
+  data = dataset
+)
+m2 <- lm(
+  pressure ~ glucose + diabetes,
+  data = dataset
+)
+```
+
+## Create Model Table
+
+```{r}
+m_table <- sjPlot::tab_model(
+  m0, m1, m2,
+  show.aic = TRUE
+)
+```
+
+
+```{r results='asis'}
+m_table
+```
+
+## Convert Model Table to `data.frame`
+
+```{r}
+mtab_df <- sjtable2df::mtab2df(
+  mtab = m_table,
+  n_models = 3,
+  output = "data.frame"
+)
+class(mtab_df)
+mtab_df
+```
+
+## Convert Model Table to `kable`
+
+```{r}
+mtab_kbl <- sjtable2df::mtab2df(
+  mtab = m_table,
+  n_models = 3,
+  output = "kable"
+)
+class(mtab_kbl)
+mtab_kbl
+```
+
+
+# Example: Model Tables: Logistic Regression
+
+## Create Three Models
+
+```{r}
+m0 <- stats::glm(
+  diabetes ~ 1,
+  data = dataset,
+  family = binomial(link = "logit")
+)
+m1 <- stats::glm(
+  diabetes ~ glucose,
+  data = dataset,
+  family = binomial(link = "logit")
+)
+m2 <- stats::glm(
+  diabetes ~ glucose + pressure,
+  data = dataset,
+  family = binomial(link = "logit")
+)
+```
+
+## Create Model Table
+
+```{r}
+m_table <- sjPlot::tab_model(
+  m0, m1, m2,
+  show.aic = TRUE
+)
+```
+
+
+```{r results='asis'}
+m_table
+```
+
+## Convert Model Table to `data.frame`
+
+```{r}
+mtab_df <- sjtable2df::mtab2df(
+  mtab = m_table,
+  n_models = 3,
+  output = "data.frame"
+)
+class(mtab_df)
+mtab_df
+```
+
+## Convert Model Table to `kable`
+
+```{r}
+mtab_kbl <- sjtable2df::mtab2df(
+  mtab = m_table,
+  n_models = 3,
+  output = "kable"
+)
+class(mtab_kbl)
+mtab_kbl
+```
+
+
+
+# Example: Model Tables: GLMM
+
+## Create Three Models
+
+```{r}
+set.seed(1)
+dataset$city <- sample(
+  x = paste0("city_", 1:7),
+  size = nrow(dataset),
+  replace = TRUE
+)
+m0 <- lme4::glmer(
+  diabetes ~ 1 + (1 | city),
+  data = dataset,
+  family = binomial(link = "logit")
+)
+m1 <- lme4::glmer(
+  diabetes ~ mass + (1 | city),
+  data = dataset,
+  family = binomial(link = "logit")
+)
+m2 <- lme4::glmer(
+  diabetes ~ mass + log(pressure) + (1 | city),
+  data = dataset,
+  family = binomial(link = "logit")
+)
+```
+
+## Create Model Table
+
+```{r}
+m_table <- sjPlot::tab_model(
+  m0, m1, m2,
+  show.aic = TRUE
+)
+```
+
+
+```{r results='asis'}
+m_table
+```
+
+## Convert Model Table to `data.frame`
+
+```{r}
+mtab_df <- sjtable2df::mtab2df(
+  mtab = m_table,
+  n_models = 3,
+  output = "data.frame"
+)
+class(mtab_df)
+mtab_df
+```
+
+## Convert Model Table to `kable`
+
+```{r}
+mtab_kbl <- sjtable2df::mtab2df(
+  mtab = m_table,
+  n_models = 3,
+  output = "kable"
+)
+class(mtab_kbl)
+mtab_kbl
+```
