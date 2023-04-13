@@ -30,9 +30,6 @@
 #' @return The table is returned as an R object of the type specified with
 #'   the `output` argument.
 #'
-#' @import data.table
-#' @importFrom magrittr "%>%"
-#'
 #' @inheritParams kableExtra::add_footnote
 #'
 #' @examples
@@ -67,7 +64,11 @@ xtab2df <- function(
   output = "data.table",
   threeparttable = FALSE,
   ...) {
-  stopifnot(inherits(xtab, "sjtxtab"))
+  stopifnot(
+    "`xtab` must be a `sjxtab`-object as produced by \
+    `sjPlot::tab_xtab`" =
+      inherits(xtab, "sjtxtab")
+  )
 
   # create statistics table
   stats_table <- get_xtab_html_table(tab = xtab)

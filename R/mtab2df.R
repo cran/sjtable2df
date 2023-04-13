@@ -28,9 +28,6 @@
 #' @return The table is returned as an R object of the type specified with
 #'   the `output` argument.
 #'
-#' @import data.table
-#' @importFrom magrittr "%>%"
-
 #' @examples
 #' \donttest{
 #' set.seed(1)
@@ -73,15 +70,19 @@
 #' @export
 #'
 mtab2df <- function(mtab, n_models, output = "data.table", ...) {
-  stopifnot(inherits(mtab, "sjTable"))
-  stopifnot(is.integer(as.integer(n_models)))
+  stopifnot(
+    "`mtab` must be a `sjTable` object as produced \
+    by `sjPlot::tab_model`" = inherits(mtab, "sjTable"),
+    "`n_models` must be a integer" = is.integer(as.integer(n_models))
+  )
 
   # create statistics table
   stats_table <- get_html_table(tab = mtab)
 
   # test if all models have the same dependent variable
   stopifnot(
-    stats_table %>%
+    "All provided models must have the same dependent variable" =
+      stats_table %>%
       colnames() %>%
       .[2:ncol(stats_table)] %>%
       unique() %>%
@@ -135,9 +136,42 @@ mtab2df <- function(mtab, n_models, output = "data.table", ...) {
   suppress_rows <- which(
     stats_table[, 1] == suppress_term):nrow(stats_table)
 
-  # suprress info
+  # suppress info
   for (colnum in suppress_cols) {
     stats_table[suppress_rows, (colnum) := ""]
+  }
+
+  # check for duplicates in last row
+  first_col_dupl <- vapply(
+    X = stats_table[nrow(stats_table), 2:ncol(stats_table)],
+    FUN = function(x) {
+      # has column >1 same value as col 1?
+      stats_table[nrow(stats_table), 1] == x
+    },
+    FUN.VALUE = logical(1)
+  )
+
+  # check for empty values in other cols
+  empty_other_cols <- vapply(
+    X = stats_table[nrow(stats_table), 2:ncol(stats_table)],
+    FUN = function(x) {
+      # has column >1 empty string?
+      "" == x
+    },
+    FUN.VALUE = logical(1)
+  )
+
+  if (sum(first_col_dupl) > 0) {
+    # if other values are an empty string
+    if (sum(first_col_dupl) == ncol(stats_table) ||
+        identical(first_col_dupl, stats::setNames(
+          object = as.logical(abs(empty_other_cols - 1)),
+          nm = names(empty_other_cols)
+        ))) {
+      # replace with empty string
+      # keep significance level information only in the first column:
+      stats_table[nrow(stats_table), 2:ncol(stats_table) := ""]
+    }
   }
 
   # data.table output
