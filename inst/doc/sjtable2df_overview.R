@@ -1,9 +1,3 @@
-## ---- include = FALSE---------------------------------------------------------
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>"
-)
-
 ## ----setup--------------------------------------------------------------------
 library(sjtable2df)
 
@@ -18,6 +12,7 @@ dataset <- PimaIndiansDiabetes2 %>%
 # create new binary variable
 dataset[, ("preg_gt_4") := ifelse(get("pregnant") > 4, 1, 0) %>% factor()]
 
+
 ## -----------------------------------------------------------------------------
 xtab <- sjPlot::tab_xtab(
   var.row = dataset$diabetes,
@@ -26,13 +21,16 @@ xtab <- sjPlot::tab_xtab(
   use.viewer = FALSE
 )
 
+
 ## ----results='asis'-----------------------------------------------------------
 xtab
+
 
 ## -----------------------------------------------------------------------------
 xtab_df <- sjtable2df::xtab2df(xtab = xtab, output = "data.frame")
 class(xtab_df)
 xtab_df
+
 
 ## -----------------------------------------------------------------------------
 xtab_kbl <- sjtable2df::xtab2df(
@@ -47,6 +45,7 @@ xtab_kbl %>%
     header = c(" " = 1, "Pregnant > 4" = 2, " " = 1)
   )
 
+
 ## -----------------------------------------------------------------------------
 xtab <- sjPlot::tab_xtab(
   var.row = dataset$diabetes,
@@ -56,12 +55,15 @@ xtab <- sjPlot::tab_xtab(
   use.viewer = FALSE
 )
 
+
 ## ----results='asis'-----------------------------------------------------------
 xtab
+
 
 ## -----------------------------------------------------------------------------
 xtab_df <- sjtable2df::xtab2df(xtab = xtab, output = "data.frame")
 xtab_df
+
 
 ## -----------------------------------------------------------------------------
 m0 <- lm(
@@ -77,14 +79,17 @@ m2 <- lm(
   data = dataset
 )
 
+
 ## -----------------------------------------------------------------------------
 m_table <- sjPlot::tab_model(
   m0, m1, m2,
   show.aic = TRUE
 )
 
+
 ## ----results='asis'-----------------------------------------------------------
 m_table
+
 
 ## -----------------------------------------------------------------------------
 mtab_df <- sjtable2df::mtab2df(
@@ -95,6 +100,7 @@ mtab_df <- sjtable2df::mtab2df(
 class(mtab_df)
 mtab_df
 
+
 ## -----------------------------------------------------------------------------
 mtab_kbl <- sjtable2df::mtab2df(
   mtab = m_table,
@@ -103,6 +109,7 @@ mtab_kbl <- sjtable2df::mtab2df(
 )
 class(mtab_kbl)
 mtab_kbl
+
 
 ## -----------------------------------------------------------------------------
 m0 <- stats::glm(
@@ -121,14 +128,17 @@ m2 <- stats::glm(
   family = binomial(link = "logit")
 )
 
+
 ## -----------------------------------------------------------------------------
 m_table <- sjPlot::tab_model(
   m0, m1, m2,
   show.aic = TRUE
 )
 
+
 ## ----results='asis'-----------------------------------------------------------
 m_table
+
 
 ## -----------------------------------------------------------------------------
 mtab_df <- sjtable2df::mtab2df(
@@ -139,6 +149,7 @@ mtab_df <- sjtable2df::mtab2df(
 class(mtab_df)
 mtab_df
 
+
 ## -----------------------------------------------------------------------------
 mtab_kbl <- sjtable2df::mtab2df(
   mtab = m_table,
@@ -147,6 +158,7 @@ mtab_kbl <- sjtable2df::mtab2df(
 )
 class(mtab_kbl)
 mtab_kbl
+
 
 ## -----------------------------------------------------------------------------
 set.seed(1)
@@ -171,14 +183,17 @@ m2 <- lme4::glmer(
   family = binomial(link = "logit")
 )
 
+
 ## -----------------------------------------------------------------------------
 m_table <- sjPlot::tab_model(
   m0, m1, m2,
   show.aic = TRUE
 )
 
+
 ## ----results='asis'-----------------------------------------------------------
 m_table
+
 
 ## -----------------------------------------------------------------------------
 mtab_df <- sjtable2df::mtab2df(
@@ -188,6 +203,7 @@ mtab_df <- sjtable2df::mtab2df(
 )
 class(mtab_df)
 mtab_df
+
 
 ## -----------------------------------------------------------------------------
 mtab_kbl <- sjtable2df::mtab2df(
