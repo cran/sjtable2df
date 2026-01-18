@@ -1,16 +1,14 @@
 ## ----setup--------------------------------------------------------------------
 library(sjtable2df)
-
 library(mlbench)
-library(magrittr)
 
 # load data
 data("PimaIndiansDiabetes2")
-dataset <- PimaIndiansDiabetes2 %>%
+dataset <- PimaIndiansDiabetes2 |>
   data.table::as.data.table()
 
 # create new binary variable
-dataset[, ("preg_gt_4") := ifelse(get("pregnant") > 4, 1, 0) %>% factor()]
+dataset[, ("preg_gt_4") := ifelse(get("pregnant") > 4, 1, 0) |> factor()]
 
 
 ## -----------------------------------------------------------------------------
@@ -40,7 +38,7 @@ xtab_kbl <- sjtable2df::xtab2df(
   col.names = c("Diabetes", "No", "Yes", "Total")
 )
 class(xtab_kbl)
-xtab_kbl %>%
+xtab_kbl |>
   kableExtra::add_header_above(
     header = c(" " = 1, "Pregnant > 4" = 2, " " = 1)
   )
@@ -82,7 +80,9 @@ m2 <- lm(
 
 ## -----------------------------------------------------------------------------
 m_table <- sjPlot::tab_model(
-  m0, m1, m2,
+  m0,
+  m1,
+  m2,
   show.aic = TRUE
 )
 
@@ -131,7 +131,9 @@ m2 <- stats::glm(
 
 ## -----------------------------------------------------------------------------
 m_table <- sjPlot::tab_model(
-  m0, m1, m2,
+  m0,
+  m1,
+  m2,
   show.aic = TRUE
 )
 
@@ -186,7 +188,9 @@ m2 <- lme4::glmer(
 
 ## -----------------------------------------------------------------------------
 m_table <- sjPlot::tab_model(
-  m0, m1, m2,
+  m0,
+  m1,
+  m2,
   show.aic = TRUE
 )
 
