@@ -3,18 +3,16 @@ library(sjtable2df)
 library(mlbench)
 
 # load data
-data("PimaIndiansDiabetes2")
-dataset <- PimaIndiansDiabetes2 |>
-  data.table::as.data.table()
-
-# create new binary variable
-dataset[, ("preg_gt_4") := ifelse(get("pregnant") > 4, 1, 0) |> factor()]
+data("BreastCancer")
+dataset <- BreastCancer |>
+  data.table::as.data.table() |>
+  na.omit()
 
 
 ## -----------------------------------------------------------------------------
 xtab <- sjPlot::tab_xtab(
-  var.row = dataset$diabetes,
-  var.col = dataset$preg_gt_4,
+  var.row = dataset$Class,
+  var.col = dataset$Mitoses,
   show.summary = TRUE,
   use.viewer = FALSE
 )
@@ -34,20 +32,15 @@ xtab_df
 xtab_kbl <- sjtable2df::xtab2df(
   xtab = xtab,
   output = "kable",
-  caption = "Diabetes vs. preg>4",
-  col.names = c("Diabetes", "No", "Yes", "Total")
+  caption = "Class vs. Mitoses"
 )
 class(xtab_kbl)
-xtab_kbl |>
-  kableExtra::add_header_above(
-    header = c(" " = 1, "Pregnant > 4" = 2, " " = 1)
-  )
 
 
 ## -----------------------------------------------------------------------------
 xtab <- sjPlot::tab_xtab(
-  var.row = dataset$diabetes,
-  var.col = dataset$preg_gt_4,
+  var.row = dataset$Class,
+  var.col = dataset$Mitoses,
   show.summary = TRUE,
   show.col.prc = TRUE,
   use.viewer = FALSE
@@ -64,16 +57,18 @@ xtab_df
 
 
 ## -----------------------------------------------------------------------------
+num_vars <- c("Cell.size", "Cell.shape")
+dataset[, (num_vars) := lapply(.SD, as.integer), .SDcols = num_vars]
 m0 <- lm(
-  pressure ~ 1,
+  Cell.size ~ 1,
   data = dataset
 )
 m1 <- lm(
-  pressure ~ glucose,
+  Cell.size ~ Cell.shape,
   data = dataset
 )
 m2 <- lm(
-  pressure ~ glucose + diabetes,
+  Cell.size ~ Cell.shape + Class,
   data = dataset
 )
 
@@ -113,17 +108,17 @@ mtab_kbl
 
 ## -----------------------------------------------------------------------------
 m0 <- stats::glm(
-  diabetes ~ 1,
+  Class ~ 1,
   data = dataset,
   family = binomial(link = "logit")
 )
 m1 <- stats::glm(
-  diabetes ~ glucose,
+  Class ~ Cell.shape,
   data = dataset,
   family = binomial(link = "logit")
 )
 m2 <- stats::glm(
-  diabetes ~ glucose + pressure,
+  Class ~ Cell.shape + Cell.size,
   data = dataset,
   family = binomial(link = "logit")
 )
@@ -170,17 +165,17 @@ dataset$city <- sample(
   replace = TRUE
 )
 m0 <- lme4::glmer(
-  diabetes ~ 1 + (1 | city),
+  Class ~ 1 + (1 | city),
   data = dataset,
   family = binomial(link = "logit")
 )
 m1 <- lme4::glmer(
-  diabetes ~ mass + (1 | city),
+  Class ~ Cell.size + (1 | city),
   data = dataset,
   family = binomial(link = "logit")
 )
 m2 <- lme4::glmer(
-  diabetes ~ mass + log(pressure) + (1 | city),
+  Class ~ Cell.size + log(Cell.shape) + (1 | city),
   data = dataset,
   family = binomial(link = "logit")
 )
